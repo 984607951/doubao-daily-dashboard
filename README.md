@@ -4,6 +4,10 @@
 
 纯本地运行，数据不出你的电脑，无需服务器即可生成单份报告。
 
+- 在线 Demo：https://984607951.github.io/doubao-daily-dashboard/
+- 源码仓库：https://github.com/984607951/doubao-daily-dashboard
+- 开源协议：MIT
+
 ## 功能特性
 
 - **核心指标**：Token（估算）、图片生成/修改张数、文字处理字数、解决问题数、工具调用次数
