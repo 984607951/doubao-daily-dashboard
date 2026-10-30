@@ -6,6 +6,7 @@
 
 - 在线 Demo：https://984607951.github.io/doubao-daily-dashboard/
 - 源码仓库：https://github.com/984607951/doubao-daily-dashboard
+- 小白上手指南：[QUICKSTART.md](QUICKSTART.md)（不懂命令行照做即可）
 - 开源协议：MIT
 
 ## 功能特性
