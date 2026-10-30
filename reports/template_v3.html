@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>豆包每日仪表盘 · __DATE__</title>
+<style>
+  :root{
+    --bg:#F3F5FC;
+    --card:#FFFFFF;
+    --ink:#0F172A;
+    --ink-2:#64748B;
+    --ink-3:#94A3B8;
+    --line:#E9EEF7;
+    --indigo:#4F46E5;
+    --blue:#3B82F6;
+    --cyan:#06B6D4;
+    --magenta:#D946EF;
+    --coral:#FB7185;
+    --amber:#F59E0B;
+    --sh-sm:0 1px 2px rgba(15,23,42,.05);
+    --sh:0 1px 2px rgba(15,23,42,.04),0 14px 34px -18px rgba(15,23,42,.16);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+    background:
+      radial-gradient(900px 520px at 90% -12%,rgba(217,70,239,.22),transparent 60%),
+      radial-gradient(900px 520px at 6% -12%,rgba(6,182,212,.26),transparent 60%),
+      radial-gradient(1100px 600px at 50% 118%,rgba(79,70,229,.2),transparent 60%),
+      var(--bg);
+    color:var(--ink);padding:28px 24px 56px;min-height:100vh;
+  }
+  .wrap{max-width:1280px;margin:0 auto}
+  .num{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+  /* ===== Top bar ===== */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin:0 4px 18px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .logo{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#4F46E5,#06B6D4);box-shadow:0 8px 18px -8px rgba(79,70,229,.7)}
+  .brand .bn{font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .brand .bs{font-size:11px;color:var(--ink-2);font-weight:600;margin-top:1px}
+  .date-pill{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+    padding:8px 14px;border-radius:99px;box-shadow:var(--sh-sm);font-size:12.5px;font-weight:700}
+  .date-pill .dot{width:7px;height:7px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative;border-radius:24px;overflow:hidden;
+    background:linear-gradient(118deg,#2E1065 0%,#6D28D9 30%,#A21CAF 58%,#0E7490 100%);
+    min-height:360px;padding:38px 44px;margin-bottom:18px;
+    box-shadow:0 24px 50px -24px rgba(110,20,150,.65);
+  }
+  .hero::before{content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(196,181,253,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(196,181,253,.08) 1px,transparent 1px);
+    background-size:46px 46px;pointer-events:none}
+  .hero::after{content:"";position:absolute;top:-40%;left:36%;width:34%;height:180%;
+    background:linear-gradient(105deg,transparent,rgba(240,171,252,.16),transparent);
+    transform:skewX(-18deg);pointer-events:none}
+  .hero-orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;pointer-events:none}
+  .hero-orb.o1{width:300px;height:300px;background:#A21CAF;top:-120px;left:30%}
+  .hero-orb.o2{width:260px;height:260px;background:#0891B2;bottom:-120px;right:18%}
+  .hero-img{position:absolute;right:40px;bottom:-10px;height:106%;z-index:2;
+    filter:drop-shadow(0 22px 34px rgba(0,0,0,.45))}
+  .hero-inner{position:relative;z-index:3;max-width:56%}
+  .hero-kicker{font-size:11px;font-weight:800;letter-spacing:.2em;color:#F0ABFC;display:flex;align-items:center;gap:9px}
+  .hero-kicker::before{content:"";width:24px;height:2px;background:linear-gradient(90deg,#F0ABFC,#22D3EE);border-radius:2px}
+  .hero-code{font-size:12.5px;font-weight:800;letter-spacing:.14em;color:#E9D5FF;margin-top:15px}
+  .hero-title{font-size:46px;font-weight:800;color:#fff;line-height:1.06;margin:7px 0 4px;letter-spacing:-.01em;white-space:nowrap}
+  .hero-title .accent{background:linear-gradient(90deg,#F0ABFC 0%,#67E8F9 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-traits{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .htrait{font-size:11px;font-weight:700;padding:6px 12px;border-radius:99px;background:rgba(103,232,249,.14);color:#CFFAFE;border:1px solid rgba(103,232,249,.26)}
+  .htrait.warm{background:rgba(244,114,182,.18);color:#FBCFE8;border-color:rgba(244,114,182,.32)}
+  .hero-stats{display:flex;gap:28px;margin-top:24px;position:relative}
+  .hero-stats::before{content:"";position:absolute;top:-13px;left:0;right:0;height:1px;background:rgba(196,181,253,.28)}
+  .hstat .v{font-size:27px;font-weight:800;color:#fff;line-height:1}
+  .hstat .v.cy{color:#F5D0FE}
+  .hstat .l{font-size:10px;color:#DDD6FE;margin-top:6px;letter-spacing:.05em;font-weight:600}
+  .hero-line{font-size:12.5px;color:#F3E8FF;margin-top:20px;line-height:1.7;max-width:500px}
+
+  /* ===== Grid ===== */
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(5,1fr);margin-bottom:16px}
+  .main{grid-template-columns:2fr 1fr;margin-bottom:16px}
+  .lower{grid-template-columns:1.3fr 1fr 1.1fr;margin-bottom:16px}
+  .card{position:relative;
+    background:linear-gradient(158deg,rgba(255,255,255,.68) 0%,rgba(255,255,255,.38) 100%);
+    backdrop-filter:blur(26px) saturate(1.8);-webkit-backdrop-filter:blur(26px) saturate(1.8);
+    border:1px solid rgba(255,255,255,.82);border-radius:20px;padding:20px 22px;
+    box-shadow:0 10px 34px rgba(31,38,135,.1),inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 -2px 6px rgba(255,255,255,.25)}
+  .card-title{font-size:16px;font-weight:800;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;justify-content:space-between}
+  .card-title .hint{font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--ink-3)}
+
+  .kpi{position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease}
+  .kpi:hover{transform:translateY(-3px);box-shadow:0 1px 2px rgba(15,23,42,.05),0 20px 40px -18px rgba(15,23,42,.22)}
+  .kpi .topbar{position:absolute;top:0;left:0;right:0;height:3px;margin:0}
+  .kpi-head{display:flex;align-items:flex-start;justify-content:space-between}
+  .kpi .label{font-size:11.5px;color:var(--ink-2);margin-top:7px;font-weight:700}
+  .kpi-ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 16px -10px rgba(15,23,42,.4);flex-shrink:0}
+  .kpi .value{font-size:34px;font-weight:800;margin-top:10px;line-height:1}
+  .kpi .value small{font-size:14px;font-weight:700;color:var(--ink-2);margin-left:2px}
+  .kpi .foot{font-size:10.5px;color:var(--ink-3);margin-top:10px}
+  .kpi.zero .value{color:var(--ink-3)}
+
+  svg{display:block;overflow:visible}
+  .chart{margin-top:14px}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px;color:var(--ink-2)}
+  .legend i{display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  .bar-row{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:11.5px}
+  .bar-row .name{width:108px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+  .bar-track{flex:1;height:9px;background:rgba(255,255,255,.55);border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px}
+  .bar-row .v{width:30px;text-align:right;font-weight:800}
+
+  .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .tag{font-size:12px;font-weight:700;padding:6px 12px;border-radius:99px;border:1px solid rgba(255,255,255,.7);color:var(--ink-2);background:rgba(255,255,255,.4)}
+  .tag.big{font-size:14px;background:linear-gradient(135deg,var(--indigo),var(--cyan));color:#fff;border:none;box-shadow:0 8px 16px -10px rgba(79,70,229,.7)}
+  .tag.mid{background:rgba(79,70,229,.08);color:var(--indigo);border-color:transparent}
+
+  .ratio-box{display:flex;align-items:center;gap:14px;margin-top:16px}
+  .ratio-num{font-size:38px;font-weight:800;line-height:1}
+  .ratio-num span{color:var(--magenta)}
+  .ratio-desc{font-size:11px;color:var(--ink-2);line-height:1.55}
+  .io-bars{margin-top:14px}
+  .io-row{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:11px}
+  .io-row .lbl{width:44px;color:var(--ink-2);font-weight:600}
+  .io-track{flex:1;height:12px;background:rgba(255,255,255,.55);border-radius:6px;overflow:hidden}
+  .io-in{height:100%;background:linear-gradient(90deg,#22D3EE,#06B6D4)}
+  .io-out{height:100%;background:linear-gradient(90deg,var(--indigo),var(--magenta))}
+
+  .week{display:flex;gap:5px;margin-top:14px;justify-content:space-between}
+  .day-col{flex:1 1 0;min-width:0;text-align:center}
+  .day-col .bar{width:100%;border-radius:6px 6px 0 0;background:rgba(255,255,255,.55);height:34px;display:flex;align-items:flex-end;overflow:hidden}
+  .day-col .bar i{display:block;width:100%;border-radius:6px 6px 0 0}
+  .day-col .d{font-size:9.5px;color:var(--ink-3);margin-top:5px}
+
+  /* ===== Wordcloud (smaller) ===== */
+  .wc-card{text-align:center;padding:22px 24px 18px}
+  .wc-img{max-width:560px;width:100%;margin:8px auto 0;display:block;border-radius:10px}
+  .wc-note{font-size:11px;color:var(--ink-2);margin-top:12px}
+
+  /* ===== Share card ===== */
+  /* ===== Share entry button ===== */
+  .share-entry{display:flex;justify-content:center;margin:6px 0 18px}
+  .share-btn{display:inline-flex;align-items:center;gap:12px;cursor:pointer;
+    font-family:inherit;font-size:16px;font-weight:800;color:#fff;border:none;
+    padding:17px 40px;border-radius:99px;
+    background:linear-gradient(120deg,#4F46E5,#A21CAF 55%,#FB7185);
+    box-shadow:0 16px 34px -14px rgba(162,28,175,.75),inset 0 1px 0 rgba(255,255,255,.35);
+    transition:transform .25s ease,box-shadow .25s ease}
+  .share-btn:hover{transform:translateY(-3px);box-shadow:0 22px 42px -14px rgba(162,28,175,.85),inset 0 1px 0 rgba(255,255,255,.35)}
+  .share-btn:active{transform:translateY(-1px)}
+
+  /* ===== Modal ===== */
+  .modal-overlay{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;
+    padding:28px;background:rgba(15,10,40,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .modal-overlay.active{display:flex;animation:fadeIn .25s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal{position:relative;max-height:100%;overflow-y:auto;display:flex;justify-content:center;
+    animation:popIn .32s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes popIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal-close{position:absolute;top:-16px;right:-16px;z-index:5;width:46px;height:46px;border-radius:50%;
+    border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.9);color:#3B0764;
+    font-size:26px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.4)}
+  .modal-close:hover{background:#fff}
+
+  .share-wrap{display:flex;justify-content:center;margin:8px 0 18px}
+  .share-card{
+    position:relative;width:430px;max-width:100%;border-radius:30px;overflow:hidden;
+    background:linear-gradient(165deg,#3B0764 0%,#6D28D9 34%,#A21CAF 64%,#155E75 100%);
+    box-shadow:0 30px 60px -28px rgba(110,20,150,.7);
+    padding:30px 28px 26px;color:#fff;
+  }
+  .share-card::before{content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(196,181,253,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(196,181,253,.08) 1px,transparent 1px);
+    background-size:38px 38px;pointer-events:none}
+  .share-card .s-orb{position:absolute;border-radius:50%;filter:blur(50px);opacity:.5}
+  .share-card .s-orb.a{width:180px;height:180px;background:#A21CAF;top:-70px;right:-40px}
+  .share-card .s-orb.b{width:160px;height:160px;background:#0891B2;bottom:-60px;left:-40px}
+  .share-top{position:relative;display:flex;align-items:center;justify-content:space-between;z-index:2}
+  .share-kicker{font-size:10px;font-weight:800;letter-spacing:.22em;color:#F0ABFC}
+  .share-badge{font-size:10px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);
+    padding:4px 10px;border-radius:99px}
+  .share-hero{position:relative;z-index:2;text-align:center;margin:6px 0 2px}
+  .share-img{width:190px;height:190px;object-fit:contain;filter:drop-shadow(0 16px 24px rgba(0,0,0,.4))}
+  .share-id-code{font-size:11px;font-weight:800;letter-spacing:.14em;color:#E9D5FF;margin-top:2px}
+  .share-id-name{font-size:30px;font-weight:800;line-height:1.1;margin-top:4px}
+  .share-id-name .ac{background:linear-gradient(90deg,#F0ABFC,#67E8F9);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .share-metrics{position:relative;z-index:2;margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .sm{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);
+    border-radius:14px;padding:10px 12px;backdrop-filter:blur(4px)}
+  .sm-ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+  .sm .sm-l{font-size:9.5px;color:#E9D5FF;font-weight:600;letter-spacing:.02em}
+  .sm .sm-v{font-size:16px;font-weight:800;line-height:1.1;margin-top:2px}
+  .share-qr{position:relative;z-index:2;margin-top:16px;display:flex;align-items:center;gap:14px;
+    background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px}
+  .share-qr img{width:64px;height:64px;border-radius:8px;flex-shrink:0}
+  .share-qr .qr-t{font-size:11px;color:#3B0764;font-weight:800;line-height:1.4}
+  .share-qr .qr-s{font-size:9.5px;color:#6D28D9;font-weight:600;margin-top:3px;line-height:1.4}
+  .share-foot{position:relative;z-index:2;text-align:center;font-size:9.5px;color:#DDD6FE;margin-top:14px;font-weight:600}
+
+  .footer{grid-template-columns:repeat(4,1fr)}
+  .f-item{text-align:center}
+  .f-item .v{font-size:26px;font-weight:800;line-height:1}
+  .f-item .l{font-size:10.5px;color:var(--ink-2);margin-top:7px;font-weight:600}
+  .note{font-size:10.5px;color:var(--ink-3);text-align:center;margin-top:20px;line-height:1.8}
+
+  .sec-label{display:flex;align-items:center;gap:10px;margin:6px 4px 14px}
+  .sec-label .sl-t{font-size:13px;font-weight:800;color:var(--ink)}
+  .sec-label .sl-l{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+  .sec-label .sl-h{font-size:10px;color:var(--ink-3);font-weight:600}
+
+  @media (max-width:960px){
+    .hero{min-height:0;padding:30px 26px 230px}
+    .hero-inner{max-width:100%}
+    .hero-img{height:240px;right:0;bottom:0}
+    .hero-title{font-size:40px}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .main,.lower{grid-template-columns:1fr}
+    .footer{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:560px){
+    body{padding:18px 14px 40px}
+    .topbar{flex-direction:column;align-items:stretch;gap:10px}
+    .date-pill{justify-content:center}
+    .hero{padding:24px 22px 190px}
+    .hero-img{height:200px}
+    .hero-title{font-size:34px}
+    .hero-stats{gap:18px;flex-wrap:wrap}
+    .kpis{grid-template-columns:repeat(2,1fr);gap:12px}
+    .card{padding:17px}
+    .share-card{padding:26px 20px 22px}
+    .share-badge{display:none}
+    .modal-close{position:absolute;top:14px;right:14px;width:38px;height:38px;font-size:21px}
+    .modal-overlay{padding:16px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.2 5.6L20 9l-4.5 4 1.3 5.9L12 15.8 7.2 18.9 8.5 13 4 9l5.8-.4L12 3z" fill="#fff"/></svg>
+      </div>
+      <div>
+        <div class="bn">豆包每日仪表盘</div>
+        <div class="bs">Daily Doubao Usage Report</div>
+      </div>
+    </div>
+    <div class="date-pill"><span class="dot"></span>__DATE_FULL__</div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-orb o1"></div>
+    <div class="hero-orb o2"></div>
+    <img class="hero-img" src="data:image/webp;base64,__HERO_B64__" alt="今日身份">
+    <div class="hero-inner">
+      <div class="hero-kicker">今日身份 · DAILY IDENTITY</div>
+      <div class="hero-code">__HERO_CODE__</div>
+      <div class="hero-title">__HERO_T1__<span class="accent">__HERO_T2__</span></div>
+      <div class="hero-traits">__HERO_TRAITS__</div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="v cy num">__H_TOK__</div><div class="l">TOKEN</div></div>
+        <div class="hstat"><div class="v num">__H_CALLS__</div><div class="l">工具调用</div></div>
+        <div class="hstat"><div class="v num">__H_PROB__</div><div class="l">解决问题</div></div>
+        <div class="hstat"><div class="v cy num">__H_RATIO__</div><div class="l">输入:输出</div></div>
+      </div>
+      <div class="hero-line">__HERO_LINE__</div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="grid kpis">
+    <div class="card kpi">
+      <div class="topbar" style="background:linear-gradient(90deg,#4F46E5,#3B82F6)"></div>
+      <div class="kpi-head">
+        <div class="label">Token 总量（估算）</div>
+        <div class="kpi-ic" style="background:linear-gradient(135deg,#4F46E5,#3B82F6)">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13l0-8z" fill="#fff"/></svg>
+        </div>
+      </div>
+      <div class="value num">__K1_V__</div>
+      <div class="foot">__K1_F__</div>
+    </div>
+    <div class="card kpi">
+      <div class="topbar" style="background:linear-gradient(90deg,#D946EF,#FB7185)"></div>
+      <div class="kpi-head">
+        <div class="label">图片生成</div>
+        <div class="kpi-ic" style="background:linear-gradient(135deg,#D946EF,#FB7185)">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2.5" stroke="#fff" stroke-width="2"/><circle cx="8.5" cy="9.5" r="1.6" fill="#fff"/><path d="M4 17l5-5 4 4 3-3 4 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="value num">__K2_V__</div>
+      <div class="foot">__K2_F__</div>
+    </div>
+    <div class="card kpi">
+      <div class="topbar" style="background:linear-gradient(90deg,#F59E0B,#FB7185)"></div>
+      <div class="kpi-head">
+        <div class="label">图片修改</div>
+        <div class="kpi-ic" style="background:linear-gradient(135deg,#F59E0B,#FB7185)">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M15 3l6 6-9 9H6v-6l9-9z" fill="#fff"/><path d="M13 5l6 6" stroke="#F59E0B" stroke-width="1.6"/></svg>
+        </div>
+      </div>
+      <div class="value num">__K3_V__</div>
+      <div class="foot">__K3_F__</div>
+    </div>
+    <div class="card kpi">
+      <div class="topbar" style="background:linear-gradient(90deg,#06B6D4,#3B82F6)"></div>
+      <div class="kpi-head">
+        <div class="label">文字处理（输出）</div>
+        <div class="kpi-ic" style="background:linear-gradient(135deg,#06B6D4,#3B82F6)">
+          <svg width="21" height="21" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6V2z" fill="#fff"/><path d="M14 2v6h6" fill="#06B6D4"/><path d="M9 13h7M9 17h7" stroke="#06B6D4" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div class="value num">__K4_V__</div>
+      <div class="foot">__K4_F__</div>
+    </div>
+    <div class="card kpi">
+      <div class="topbar" style="background:linear-gradient(90deg,#8B5CF6,#D946EF)"></div>
+      <div class="kpi-head">
+        <div class="label">解决问题</div>
+        <div class="kpi-ic" style="background:linear-gradient(135deg,#8B5CF6,#D946EF)">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M9 9a3 3 0 016 0c0 2-3 2.5-3 4.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.3" fill="#fff"/></svg>
+        </div>
+      </div>
+      <div class="value num">__K5_V__</div>
+      <div class="foot">__K5_F__</div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="grid main">
+    <div class="card">
+      <div class="card-title">今日活跃流 <span class="hint">__M_HINT__</span></div>
+      <div class="chart" id="mainChart"></div>
+      <div class="legend">__M_LEGEND__</div>
+    </div>
+    <div class="card">
+      <div class="card-title">任务类型</div>
+      <div class="chart" id="donutChart"></div>
+      <div class="legend" id="donutLegend" style="justify-content:center;flex-direction:column;gap:6px"></div>
+    </div>
+  </div>
+
+  <!-- Lower -->
+  <div class="grid lower">
+    <div class="card">
+      <div class="card-title">工具调用排行 <span class="hint" id="barTotal"></span></div>
+      <div id="barList"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">今日关键词</div>
+      <div class="tags" id="tagList"></div>
+      <div class="card-title" style="margin-top:22px">近 7 日活动</div>
+      <div class="week" id="weekChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">指令风格</div>
+      <div class="ratio-box">
+        <div class="ratio-num" id="ratioNum"></div>
+        <div class="ratio-desc" id="ratioDesc"></div>
+      </div>
+      <div class="io-bars" id="ioBars"></div>
+      <div style="font-size:10.5px;color:var(--ink-3);margin-top:13px;line-height:1.7" id="styleNote"></div>
+    </div>
+  </div>
+
+  <!-- Wordcloud -->
+  <div class="card wc-card">
+    <div class="card-title" style="justify-content:center">今日关键词 · 词云</div>
+    <img class="wc-img" src="data:image/jpeg;base64,__WC_B64__" alt="今日关键词词云">
+    <div class="wc-note">词越大，出现得越多——你一天的思考，浓缩成这一片。</div>
+  </div>
+
+  <!-- Share section label -->
+  <div class="sec-label" style="margin-top:22px">
+    <div class="sl-t">分享卡片</div>
+    <div class="sl-l"></div>
+    <div class="sl-h">9:16 · 适合社交媒体 · 点击生成</div>
+  </div>
+
+  <div class="share-entry">
+    <button class="share-btn" id="shareBtn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="6" cy="12" r="2.4" fill="#fff"/>
+        <circle cx="18" cy="6" r="2.4" fill="#fff"/>
+        <circle cx="18" cy="18" r="2.4" fill="#fff"/>
+        <path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      分享到朋友圈
+    </button>
+  </div>
+
+  <!-- Share modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <button class="modal-close" id="modalClose" aria-label="关闭">×</button>
+      <div class="share-card" id="shareCard">
+      <div class="s-orb a"></div>
+      <div class="s-orb b"></div>
+      <div class="share-top">
+        <div class="share-kicker">豆包每日仪表盘</div>
+        <div class="share-badge">__SHARE_DATE__</div>
+      </div>
+      <div class="share-hero">
+        <img class="share-img" src="data:image/webp;base64,__HERO_B64__" alt="今日身份">
+        <div class="share-id-code">__HERO_CODE__</div>
+        <div class="share-id-name">__SHARE_T1__<span class="ac">__SHARE_T2__</span></div>
+      </div>
+      <div class="share-metrics">
+        <div class="sm">
+          <div class="sm-ic" style="background:linear-gradient(135deg,#4F46E5,#3B82F6)"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13l0-8z" fill="#fff"/></svg></div>
+          <div><div class="sm-l">Token 总量</div><div class="sm-v num">__SM1__</div></div>
+        </div>
+        <div class="sm">
+          <div class="sm-ic" style="background:linear-gradient(135deg,#D946EF,#FB7185)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2.5" stroke="#fff" stroke-width="2"/><circle cx="8.5" cy="9.5" r="1.6" fill="#fff"/><path d="M4 17l5-5 4 4 3-3 4 4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div><div class="sm-l">图片生成</div><div class="sm-v num">__SM2__</div></div>
+        </div>
+        <div class="sm">
+          <div class="sm-ic" style="background:linear-gradient(135deg,#F59E0B,#FB7185)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 3l6 6-9 9H6v-6l9-9z" fill="#fff"/><path d="M13 5l6 6" stroke="#F59E0B" stroke-width="1.6"/></svg></div>
+          <div><div class="sm-l">图片修改</div><div class="sm-v num">__SM3__</div></div>
+        </div>
+        <div class="sm">
+          <div class="sm-ic" style="background:linear-gradient(135deg,#06B6D4,#3B82F6)"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6V2z" fill="#fff"/><path d="M14 2v6h6" fill="#06B6D4"/><path d="M9 13h7M9 17h7" stroke="#06B6D4" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <div><div class="sm-l">文字处理</div><div class="sm-v num">__SM4__</div></div>
+        </div>
+        <div class="sm">
+          <div class="sm-ic" style="background:linear-gradient(135deg,#8B5CF6,#D946EF)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 9a3 3 0 016 0c0 2-3 2.5-3 4.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.3" fill="#fff"/></svg></div>
+          <div><div class="sm-l">解决问题</div><div class="sm-v num">__SM5__</div></div>
+        </div>
+        <div class="sm">
+          <div class="sm-ic" style="background:linear-gradient(135deg,#0891B2,#22D3EE)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 005.4-5.4l-2.6 2.6-2.4-2.4 2.6-2.6z" fill="#fff"/></svg></div>
+          <div><div class="sm-l">工具调用</div><div class="sm-v num">__SM6__</div></div>
+        </div>
+      </div>
+      <div class="share-qr">
+        <img src="data:image/png;base64,__QR_B64__" alt="二维码">
+        <div>
+          <div class="qr-t">扫一扫，查看自己的模型报告</div>
+          <div class="qr-s">扫码配置即可打开今日数据仪表盘</div>
+        </div>
+      </div>
+      <div class="share-foot">__SHARE_FOOT__</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="grid footer card">
+    <div class="f-item"><div class="v num" id="f1v"></div><div class="l">连续打卡</div></div>
+    <div class="f-item"><div class="v num" id="f2v"></div><div class="l">累计 Token</div></div>
+    <div class="f-item"><div class="v num" id="f3v"></div><div class="l">活跃时长</div></div>
+    <div class="f-item"><div class="v num" id="f4v"></div><div class="l">每回合工具调用</div></div>
+  </div>
+
+  <div class="note">
+    Token 为估算值（中文约 1.3 Token/字、英文约 4 字符/Token）；问题数、分类、身份与总结由 AI 判断。<br>
+    数据仓库：doubao_dashboard/data/daily_stats.json · 每日 19:00 生成（调度恢复后自动推送）
+  </div>
+
+</div>
+
+<script>
+const DASH_DATA = __REPORT_DATA__;
+</script>
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const D=DASH_DATA;
+
+  /* ===== Activity bar chart ===== */
+  (function(){
+    const a=D.activity, W=760,H=230,padL=24,padR=14,padT=20,padB=28;
+    const n=a.labels.length, bw=(W-padL-padR)/n, barW=bw*0.58;
+    const svg=document.createElementNS(NS,"svg");
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("width","100%");
+    // gap bg
+    if(a.gap){
+      const g=document.createElementNS(NS,"rect");
+      g.setAttribute("x",padL+bw*a.gap.from);g.setAttribute("y",padT);
+      g.setAttribute("width",bw*(a.gap.to-a.gap.from));g.setAttribute("height",H-padT-padB);
+      g.setAttribute("fill","rgba(148,163,184,.14)");g.setAttribute("rx","6");svg.appendChild(g);
+      const zt=document.createElementNS(NS,"text");
+      zt.setAttribute("x",padL+bw*(a.gap.from+a.gap.to)/2);
+      zt.setAttribute("y",(H-padB)/2+padT);zt.setAttribute("text-anchor","middle");
+      zt.setAttribute("font-size","10");zt.setAttribute("fill","#B7BAD0");
+      zt.textContent=a.gap.text;svg.appendChild(zt);
+    }
+    const cool=["#4F46E5","#6366F1","#818CF8"];
+    const warm=["#D946EF","#FB7185"];
+    a.labels.forEach((lb,k)=>{
+      const cx=padL+bw*k+bw/2, v=a.vals[k];
+      if(v>0){
+        const h=(v/a.vmax)*(H-padT-padB);
+        const r=document.createElementNS(NS,"rect");
+        let col = k<a.coolUntil ? cool[Math.min(k,2)] : warm[(k-a.coolUntil)%2];
+        r.setAttribute("x",cx-barW/2);r.setAttribute("y",H-padB-h);
+        r.setAttribute("width",barW);r.setAttribute("height",h);
+        r.setAttribute("rx",Math.min(4,barW/2));r.setAttribute("fill",col);
+        svg.appendChild(r);
+        const vt=document.createElementNS(NS,"text");
+        vt.setAttribute("x",cx);vt.setAttribute("y",H-padB-h-4);
+        vt.setAttribute("text-anchor","middle");vt.setAttribute("font-size","9.5");
+        vt.setAttribute("font-weight","700");vt.setAttribute("fill",col);
+        vt.textContent=v;svg.appendChild(vt);
+      }
+      const t=document.createElementNS(NS,"text");
+      t.setAttribute("x",cx);t.setAttribute("y",H-9);t.setAttribute("text-anchor","middle");
+      t.setAttribute("font-size","9.5");t.setAttribute("fill","#9EA0B5");
+      t.textContent=lb;svg.appendChild(t);
+    });
+    document.getElementById("mainChart").appendChild(svg);
+  })();
+
+  /* ===== Donut ===== */
+  (function(){
+    const size=180,stroke=22,r=(size-stroke)/2,c=size/2;
+    const svg=document.createElementNS(NS,"svg");
+    svg.setAttribute("viewBox",`0 0 ${size} ${size}`);svg.setAttribute("width","100%");
+    const circ=2*Math.PI*r;
+    const bg=document.createElementNS(NS,"circle");
+    bg.setAttribute("cx",c);bg.setAttribute("cy",c);bg.setAttribute("r",r);
+    bg.setAttribute("fill","none");bg.setAttribute("stroke","rgba(148,163,184,.22)");bg.setAttribute("stroke-width",stroke);
+    svg.appendChild(bg);
+    let acc=0;
+    D.donut.segs.forEach(s=>{
+      const len=s.pct/100*circ, gap=circ-len;
+      const seg=document.createElementNS(NS,"circle");
+      seg.setAttribute("cx",c);seg.setAttribute("cy",c);seg.setAttribute("r",r);
+      seg.setAttribute("fill","none");seg.setAttribute("stroke",s.color);seg.setAttribute("stroke-width",stroke);
+      seg.setAttribute("stroke-dasharray",`${len} ${gap}`);
+      seg.setAttribute("stroke-dashoffset",-acc/100*circ);
+      seg.setAttribute("transform",`rotate(-90 ${c} ${c})`);
+      svg.appendChild(seg);acc+=s.pct;
+    });
+    const t1=document.createElementNS(NS,"text");
+    t1.setAttribute("x",c);t1.setAttribute("y",c-1);t1.setAttribute("text-anchor","middle");
+    t1.setAttribute("font-size","25");t1.setAttribute("font-weight","800");
+    t1.textContent=D.donut.center.big;svg.appendChild(t1);
+    const t2=document.createElementNS(NS,"text");
+    t2.setAttribute("x",c);t2.setAttribute("y",c+18);t2.setAttribute("text-anchor","middle");
+    t2.setAttribute("font-size","10");t2.setAttribute("fill","#9EA0B5");
+    t2.textContent=D.donut.center.small;svg.appendChild(t2);
+    document.getElementById("donutChart").appendChild(svg);
+    const lg=document.getElementById("donutLegend");
+    D.donut.segs.forEach(s=>{
+      const sp=document.createElement("span");
+      sp.innerHTML=`<i style="background:${s.color}"></i>${s.label} ${s.pct}%`;
+      lg.appendChild(sp);
+    });
+  })();
+
+  /* ===== Tool bars ===== */
+  (function(){
+    const box=document.getElementById("barList");
+    document.getElementById("barTotal").textContent=`共 ${D.tools.total} 次`;
+    const max=D.tools.list[0].v;
+    D.tools.list.forEach(t=>{
+      const row=document.createElement("div");row.className="bar-row";
+      row.innerHTML=`<div class="name">${t.name}</div><div class="bar-track"><div class="bar-fill" style="width:${t.v/max*100}%;background:${t.color}"></div></div><div class="v num">${t.v}</div>`;
+      box.appendChild(row);
+    });
+  })();
+
+  /* ===== Tags ===== */
+  (function(){
+    const box=document.getElementById("tagList");
+    const b=document.createElement("span");b.className="tag big";b.textContent=D.tags.big;box.appendChild(b);
+    D.tags.mid.forEach(m=>{const s=document.createElement("span");s.className="tag mid";s.textContent=m;box.appendChild(s);});
+    D.tags.rest.forEach(r=>{const s=document.createElement("span");s.className="tag";s.textContent=r;box.appendChild(s);});
+  })();
+
+  /* ===== Week ===== */
+  (function(){
+    const box=document.getElementById("weekChart");
+    D.week.labels.forEach((lb,i)=>{
+      const col=document.createElement("div");col.className="day-col";
+      const v=D.week.vals[i];
+      const h=v?Math.max(12,v/D.week.vmax*100):0;
+      col.innerHTML=`<div class="bar"><i style="height:${h}%;background:linear-gradient(180deg,#4F46E5,#06B6D4)"></i></div><div class="d">${lb}</div>`;
+      box.appendChild(col);
+    });
+  })();
+
+  /* ===== Ratio / style ===== */
+  (function(){
+    document.getElementById("ratioNum").innerHTML=D.ratio.num;
+    document.getElementById("ratioDesc").innerHTML=D.ratio.desc;
+    document.getElementById("ioBars").innerHTML=
+      `<div class="io-row"><div class="lbl">输入</div><div class="io-track"><div class="io-in" style="width:${D.ratio.inPct}%"></div></div></div>`+
+      `<div class="io-row"><div class="lbl">输出</div><div class="io-track"><div class="io-out" style="width:${D.ratio.outPct}%"></div></div></div>`;
+    document.getElementById("styleNote").textContent=D.ratio.note;
+  })();
+
+  /* ===== Footer ===== */
+  (function(){
+    document.getElementById("f1v").innerHTML=D.footer.f1;
+    document.getElementById("f2v").innerHTML=D.footer.f2;
+    document.getElementById("f3v").innerHTML=D.footer.f3;
+    document.getElementById("f4v").innerHTML=D.footer.f4;
+  })();
+
+  /* ===== Share modal ===== */
+  (function(){
+    const ov=document.getElementById("modalOverlay");
+    const btn=document.getElementById("shareBtn");
+    const close=document.getElementById("modalClose");
+    const open=()=>ov.classList.add("active");
+    const shut=()=>ov.classList.remove("active");
+    btn.addEventListener("click",open);
+    close.addEventListener("click",shut);
+    ov.addEventListener("click",e=>{if(e.target===ov)shut();});
+    document.addEventListener("keydown",e=>{if(e.key==="Escape")shut();});
+  })();
+})();
+</script>

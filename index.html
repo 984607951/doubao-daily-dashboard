@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>豆包每日仪表盘 · 把每天和 AI 的对话，浓缩成一份好看的报告</title>
+<meta name="description" content="纯本地运行的 AI 使用数据仪表盘：Token、图片、文字、问题数，以及匹配当天风格的动物身份。开源免费，数据不出本机。">
+<style>
+  :root{
+    --bg:#F3F5FC; --card:#FFFFFF; --ink:#0F172A; --ink-2:#64748B; --ink-3:#94A3B8; --line:#E9EEF7;
+    --indigo:#4F46E5; --blue:#3B82F6; --cyan:#06B6D4; --magenta:#D946EF; --coral:#FB7185; --amber:#F59E0B;
+    --sh-sm:0 1px 2px rgba(15,23,42,.05);
+    --sh:0 1px 2px rgba(15,23,42,.04),0 18px 40px -20px rgba(15,23,42,.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+    background:
+      radial-gradient(900px 520px at 92% -10%,rgba(217,70,239,.20),transparent 60%),
+      radial-gradient(900px 520px at 4% -10%,rgba(6,182,212,.24),transparent 60%),
+      radial-gradient(1100px 600px at 50% 118%,rgba(79,70,229,.18),transparent 60%),
+      var(--bg);
+    color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  .num{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  a{text-decoration:none;color:inherit}
+  section{scroll-margin-top:90px}
+
+  /* ===== Nav ===== */
+  .nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);
+    background:rgba(243,245,252,.78);border-bottom:1px solid rgba(233,238,247,.7)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#4F46E5,#06B6D4);box-shadow:0 8px 18px -8px rgba(79,70,229,.7)}
+  .logo svg{width:20px;height:20px}
+  .bn{font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .nav-links{display:flex;align-items:center;gap:28px;font-size:13.5px;font-weight:600;color:var(--ink-2)}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-cta{background:var(--ink);color:#fff;font-size:13px;font-weight:700;padding:9px 18px;border-radius:99px;transition:transform .2s,box-shadow .2s}
+  .nav-cta:hover{transform:translateY(-1px);box-shadow:0 10px 22px -10px rgba(15,23,42,.6)}
+
+  /* ===== Hero ===== */
+  .hero{padding:72px 0 56px;display:grid;grid-template-columns:1.15fr .85fr;gap:32px;align-items:center}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--indigo);
+    background:rgba(79,70,229,.08);border:1px solid rgba(79,70,229,.16);padding:6px 14px;border-radius:99px}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+  .hero h1{font-size:52px;font-weight:800;line-height:1.1;letter-spacing:-.02em;margin:20px 0 18px}
+  .hero h1 .grad{background:linear-gradient(90deg,#6D28D9,#D946EF 55%,#06B6D4);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.sub{font-size:17px;color:var(--ink-2);max-width:520px}
+  .cta-row{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:700;padding:14px 26px;border-radius:14px;transition:transform .2s,box-shadow .2s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{background:linear-gradient(118deg,#4F46E5,#7C3AED 50%,#D946EF);color:#fff;box-shadow:0 18px 34px -16px rgba(124,58,237,.7)}
+  .btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:var(--sh-sm)}
+  .btn svg{width:18px;height:18px}
+  .hero-visual{position:relative;display:flex;justify-content:center}
+  .hero-card{position:relative;width:100%;border-radius:28px;overflow:hidden;
+    background:linear-gradient(118deg,#2E1065 0%,#6D28D9 32%,#A21CAF 60%,#0E7490 100%);
+    padding:30px;box-shadow:0 30px 60px -28px rgba(110,20,150,.65);aspect-ratio:4/4.6}
+  .hero-card::before{content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(196,181,253,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(196,181,253,.08) 1px,transparent 1px);
+    background-size:42px 42px}
+  .hero-card img{position:relative;z-index:2;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 20px 30px rgba(0,0,0,.4))}
+  .hero-mini{position:absolute;z-index:3;left:-14px;bottom:26px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
+    border-radius:14px;padding:10px 16px;box-shadow:var(--sh);display:flex;align-items:center;gap:10px}
+  .hero-mini .mv{font-size:20px;font-weight:800}
+  .hero-mini .ml{font-size:11px;color:var(--ink-2);font-weight:600}
+
+  /* ===== Section heading ===== */
+  .sec-head{text-align:center;margin-bottom:44px}
+  .sec-kicker{font-size:12px;font-weight:800;letter-spacing:.22em;color:var(--magenta);text-transform:uppercase}
+  .sec-title{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:10px 0 12px}
+  .sec-desc{font-size:15.5px;color:var(--ink-2);max-width:600px;margin:0 auto}
+
+  /* ===== Metrics ===== */
+  .metrics{padding:64px 0}
+  .metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .metric{background:linear-gradient(158deg,rgba(255,255,255,.72),rgba(255,255,255,.42));
+    backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);
+    border:1px solid rgba(255,255,255,.7);border-radius:20px;padding:26px;box-shadow:var(--sh);transition:transform .25s}
+  .metric:hover{transform:translateY(-4px)}
+  .metric-ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .metric-ic svg{width:23px;height:23px}
+  .ic-1{background:rgba(79,70,229,.12);color:var(--indigo)}
+  .ic-2{background:rgba(217,70,239,.12);color:var(--magenta)}
+  .ic-3{background:rgba(6,182,212,.12);color:var(--cyan)}
+  .ic-4{background:rgba(245,158,11,.14);color:var(--amber)}
+  .ic-5{background:rgba(251,113,133,.12);color:var(--coral)}
+  .ic-6{background:rgba(59,130,246,.12);color:var(--blue)}
+  .metric h3{font-size:16.5px;font-weight:800;margin-bottom:6px}
+  .metric p{font-size:13.5px;color:var(--ink-2)}
+
+  /* ===== Identities ===== */
+  .identities{padding:64px 0}
+  .id-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .id-card{position:relative;background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px 16px 18px;
+    text-align:center;box-shadow:var(--sh-sm);overflow:hidden;transition:transform .25s,box-shadow .25s}
+  .id-card:hover{transform:translateY(-5px);box-shadow:var(--sh)}
+  .id-card::before{content:"";position:absolute;top:0;left:0;right:0;height:74px;
+    background:linear-gradient(135deg,rgba(79,70,229,.1),rgba(217,70,239,.12))}
+  .id-img{position:relative;height:108px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:10px}
+  .id-img img{max-height:108px;max-width:100%;object-fit:contain;filter:drop-shadow(0 10px 14px rgba(0,0,0,.16))}
+  .id-code{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--ink-3)}
+  .id-name{font-size:15px;font-weight:800;margin:3px 0 2px}
+  .id-role{font-size:12px;color:var(--ink-2);font-weight:600}
+
+  /* ===== Showcase ===== */
+  .showcase{padding:64px 0}
+  .browser{max-width:1000px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 30px 60px -28px rgba(15,23,42,.4);border:1px solid var(--line)}
+  .browser-bar{display:flex;align-items:center;gap:8px;padding:13px 18px;background:#F8FAFE;border-bottom:1px solid var(--line)}
+  .browser-bar .tl{width:11px;height:11px;border-radius:50%}
+  .r1{background:#FB7185}.r2{background:#F59E0B}.r3{background:#22C55E}
+  .browser-url{margin-left:12px;font-size:12px;color:var(--ink-3);background:#fff;border:1px solid var(--line);padding:5px 14px;border-radius:8px;flex:1;max-width:420px}
+  .browser img{width:100%;display:block}
+  .showcase-note{text-align:center;margin-top:24px}
+
+  /* ===== Steps ===== */
+  .steps{padding:64px 0}
+  .step-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:step}
+  .step{position:relative;background:linear-gradient(158deg,rgba(255,255,255,.72),rgba(255,255,255,.42));
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.7);
+    border-radius:20px;padding:30px 26px;box-shadow:var(--sh)}
+  .step-num{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#4F46E5,#D946EF);
+    color:#fff;font-size:19px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+  .step h3{font-size:17px;font-weight:800;margin-bottom:8px}
+  .step p{font-size:13.5px;color:var(--ink-2);margin-bottom:14px}
+  .code{background:#0F172A;color:#E2E8F0;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+    padding:12px 14px;border-radius:10px;overflow-x:auto;white-space:nowrap}
+  .code .cm{color:#7DD3FC}
+
+  /* ===== FAQ ===== */
+  .faq{padding:64px 0}
+  .faq-list{max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+  .faq-item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px 24px;box-shadow:var(--sh-sm)}
+  .faq-q{font-size:15.5px;font-weight:800;display:flex;gap:10px;align-items:flex-start}
+  .faq-q::before{content:"Q";flex:none;width:24px;height:24px;border-radius:7px;background:rgba(217,70,239,.12);color:var(--magenta);
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .faq-a{font-size:14px;color:var(--ink-2);margin-top:10px;padding-left:34px}
+  .faq-a strong{color:var(--ink)}
+
+  /* ===== Final CTA ===== */
+  .final{padding:72px 0 80px}
+  .final-card{position:relative;border-radius:28px;overflow:hidden;text-align:center;
+    background:linear-gradient(118deg,#2E1065,#6D28D9 35%,#A21CAF 62%,#0E7490);padding:64px 32px;
+    box-shadow:0 30px 60px -28px rgba(110,20,150,.7)}
+  .final-card::before{content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(196,181,253,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(196,181,253,.08) 1px,transparent 1px);
+    background-size:44px 44px}
+  .final-card h2{position:relative;font-size:34px;font-weight:800;color:#fff;letter-spacing:-.02em;margin-bottom:14px}
+  .final-card p{position:relative;color:#E9D5FF;font-size:15.5px;margin-bottom:30px}
+  .final-card .btn{position:relative}
+
+  /* ===== Footer ===== */
+  footer{border-top:1px solid var(--line);padding:36px 0 44px;background:rgba(255,255,255,.5)}
+  .foot-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px}
+  .foot-links{display:flex;gap:24px;font-size:13px;color:var(--ink-2);font-weight:600}
+  .foot-links a:hover{color:var(--ink)}
+  .copy{font-size:12.5px;color:var(--ink-3)}
+
+  /* ===== Responsive ===== */
+  @media(max-width:900px){
+    .hero{grid-template-columns:1fr;padding:48px 0 40px}
+    .hero-visual{max-width:380px;margin:0 auto;order:-1}
+    .hero h1{font-size:40px}
+    .metric-grid{grid-template-columns:repeat(2,1fr)}
+    .id-grid{grid-template-columns:repeat(2,1fr)}
+    .step-grid{grid-template-columns:1fr}
+    .nav-links{display:none}
+    .sec-title{font-size:27px}
+  }
+  @media(max-width:560px){
+    .metric-grid{grid-template-columns:1fr}
+    .hero h1{font-size:33px}
+    .hero p.sub{font-size:15px}
+    .cta-row .btn{flex:1;justify-content:center}
+    .final-card h2{font-size:26px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <span class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M20 19H3"/></svg>
+      </span>
+      <span class="bn">豆包每日仪表盘</span>
+    </a>
+    <div class="nav-links">
+      <a href="#metrics">核心指标</a>
+      <a href="#identities">每日身份</a>
+      <a href="#steps">三步上手</a>
+      <a href="#faq">常见问题</a>
+    </div>
+    <a class="nav-cta" href="reports/demo.html">在线看 Demo</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="wrap hero" id="top">
+  <div class="hero-text">
+    <span class="badge"><span class="dot"></span>开源免费 · 纯本地运行</span>
+    <h1>把每天和 AI 的对话，<br><span class="grad">浓缩成一份好看的报告</span></h1>
+    <p class="sub">Token、图片、文字、问题数，自动统计成一张设计感十足的数据仪表盘，还会根据当天的任务风格，匹配一个专属动物身份。数据全程留在你的电脑，不上传、不外发。</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="reports/demo.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        在线看 Demo
+      </a>
+      <a class="btn btn-ghost" href="#steps">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        我要自己部署
+      </a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-card">
+      <img src="data/hero_raccoon.webp" alt="浣熊·全能多面手">
+    </div>
+    <div class="hero-mini">
+      <span class="mv num">8,888</span>
+      <span class="ml">示例 Token<br>全能多面手</span>
+    </div>
+  </div>
+</header>
+
+<!-- Metrics -->
+<section class="wrap metrics" id="metrics">
+  <div class="sec-head">
+    <div class="sec-kicker">Core Metrics</div>
+    <h2 class="sec-title">六项核心指标，一天工作一目了然</h2>
+    <p class="sec-desc">从本地会话数据自动采集，无需手动记录。每个数字都可追溯、可复算。</p>
+  </div>
+  <div class="metric-grid">
+    <div class="metric">
+      <div class="metric-ic ic-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg></div>
+      <h3>Token 总量</h3>
+      <p>输入与输出分别统计，按本地口径估算，区分指令与产出。</p>
+    </div>
+    <div class="metric">
+      <div class="metric-ic ic-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>
+      <h3>图片生成与修改</h3>
+      <p>分别统计生成、修改张数，记录视觉创作的工作量。</p>
+    </div>
+    <div class="metric">
+      <div class="metric-ic ic-3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></div>
+      <h3>文字处理字数</h3>
+      <p>用户输入与 AI 输出字数分开统计，看清读写比例。</p>
+    </div>
+    <div class="metric">
+      <div class="metric-ic ic-4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7"/><line x1="12" y1="17" x2="12" y2="17"/></svg></div>
+      <h3>解决问题数</h3>
+      <p>按用户指令与回复轮次统计，量化一天解决了多少事。</p>
+    </div>
+    <div class="metric">
+      <div class="metric-ic ic-5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="m17 5-2 3.5"/><path d="M22 12h-4"/><path d="m17 19-2-3.5"/><path d="M12 22v-4"/><path d="m7 19 2-3.5"/><path d="M2 12h4"/><path d="m7 5 2 3.5"/></svg></div>
+      <h3>每日身份</h3>
+      <p>根据任务结构自动判定 8 个动物身份，让数据更有温度。</p>
+    </div>
+    <div class="metric">
+      <div class="metric-ic ic-6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg></div>
+      <h3>活跃流与词云</h3>
+      <p>按小时还原工作节奏，透明词云呈现当天的思考关键词。</p>
+    </div>
+  </div>
+</section>
+
+<!-- Identities -->
+<section class="wrap identities" id="identities">
+  <div class="sec-head">
+    <div class="sec-kicker">Daily Identity</div>
+    <h2 class="sec-title">八个动物身份，每天一个新角色</h2>
+    <p class="sec-desc">没有单一主导任务、或覆盖四类以上时，会触发浣熊“全能多面手”；其余按主导任务匹配。</p>
+  </div>
+  <div class="id-grid">
+    <div class="id-card"><div class="id-img"><img src="data/hero_owl.webp" alt="猫头鹰"></div><div class="id-code">SVA-01</div><div class="id-name">猫头鹰</div><div class="id-role">自我量化架构师</div></div>
+    <div class="id-card"><div class="id-img"><img src="data/hero_peacock.webp" alt="孔雀"></div><div class="id-code">PCV-02</div><div class="id-name">孔雀</div><div class="id-role">像素指挥官</div></div>
+    <div class="id-card"><div class="id-img"><img src="data/hero_bee.webp" alt="蜜蜂"></div><div class="id-code">DRS-03</div><div class="id-name">蜜蜂</div><div class="id-role">深度研究员</div></div>
+    <div class="id-card"><div class="id-img"><img src="data/hero_parrot.webp" alt="鹦鹉"></div><div class="id-code">WRT-04</div><div class="id-name">鹦鹉</div><div class="id-role">文字工匠</div></div>
+    <div class="id-card"><div class="id-img"><img src="data/hero_woodpecker.webp" alt="啄木鸟"></div><div class="id-code">DBG-05</div><div class="id-name">啄木鸟</div><div class="id-role">调试工程师</div></div>
+    <div class="id-card"><div class="id-img"><img src="data/hero_fox.webp" alt="狐狸"></div><div class="id-code">CDR-06</div><div class="id-name">狐狸</div><div class="id-role">创意总监</div></div>
+    <div class="id-card"><div class="id-img"><img src="data/hero_golden.webp" alt="金毛犬"></div><div class="id-code">LFC-07</div><div class="id-name">金毛犬</div><div class="id-role">生活顾问</div></div>
+    <div class="id-card"><div class="id-img"><img src="data/hero_raccoon.webp" alt="浣熊"></div><div class="id-code">MIX-08</div><div class="id-name">浣熊</div><div class="id-role">全能多面手</div></div>
+  </div>
+</section>
+
+<!-- Showcase -->
+<section class="wrap showcase" id="showcase">
+  <div class="sec-head">
+    <div class="sec-kicker">Live Preview</div>
+    <h2 class="sec-title">仪表盘长这样</h2>
+    <p class="sec-desc">电脑、手机自适应，整页截图自动产出，社媒分享卡片一键生成。</p>
+  </div>
+  <div class="browser">
+    <div class="browser-bar">
+      <span class="tl r1"></span><span class="tl r2"></span><span class="tl r3"></span>
+      <span class="browser-url">reports/demo.html</span>
+    </div>
+    <img src="docs/demo_desktop.png" alt="豆包每日仪表盘桌面预览">
+  </div>
+  <div class="showcase-note"><a class="btn btn-ghost" href="reports/demo.html">打开完整 Demo</a></div>
+</section>
+
+<!-- Steps -->
+<section class="wrap steps" id="steps">
+  <div class="sec-head">
+    <div class="sec-kicker">Get Started</div>
+    <h2 class="sec-title">三步，在本地跑起来</h2>
+    <p class="sec-desc">不需要服务器，不需要数据库，生成单份报告只要几分钟。</p>
+  </div>
+  <div class="step-grid">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>准备环境</h3>
+      <p>Python 3.9 以上，安装依赖并准备截图用的 Chromium。</p>
+      <div class="code">pip install <span class="cm">wordcloud qrcode pillow playwright</span>
+playwright install chromium</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>生成示例（可选）</h3>
+      <p>先用编造数据验证效果，确认渲染一切正常。</p>
+      <div class="code">python3 scripts/make_sample.py
+python3 scripts/render_report.py <span class="cm">2026-10-15</span></div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>生成自己的报告</h3>
+      <p>一键按“昨日 19:00—今日 18:50”窗口生成并截图。</p>
+      <div class="code">bash scripts/run_daily.sh</div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="wrap faq" id="faq">
+  <div class="sec-head">
+    <div class="sec-kicker">FAQ</div>
+    <h2 class="sec-title">常见问题</h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q">在线 Demo 能直接统计我自己的数据吗？</div>
+      <div class="faq-a"><strong>不能。</strong>浏览器无法读取你本地的会话数据，在线 Demo 只展示固定的编造示例和样式。要统计自己的数据，需要按上文在本地运行脚本。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">我的数据会被上传吗？</div>
+      <div class="faq-a"><strong>不会。</strong>所有数据都保存在本地 data 目录，报告在本地生成，不依赖任何远程服务器，也不向外部发送数据。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Token 数字是平台精确计费值吗？</div>
+      <div class="faq-a"><strong>不是。</strong>中文等 CJK 约 1 字 ≈ 1.3 token，其余约 4 字符/token，是本地估算口径，用于观察趋势，不代表平台实际计费。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">需要一直开着电脑吗？</div>
+      <div class="faq-a"><strong>生成单份报告不需要。</strong>运行脚本即可；若要每天定时自动生成，需要自行配置系统定时任务。</div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="wrap final">
+  <div class="final-card">
+    <h2>现在就看看你的每日数据</h2>
+    <p>打开在线 Demo 预览效果，或回到本地三步上手，生成属于自己的报告。</p>
+    <a class="btn btn-primary" href="reports/demo.html">在线看 Demo</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="wrap foot-inner">
+    <a class="brand" href="#top">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M20 19H3"/></svg></span>
+      <span class="bn">豆包每日仪表盘</span>
+    </a>
+    <div class="foot-links">
+      <a href="reports/demo.html">在线 Demo</a>
+      <a href="#steps">部署教程</a>
+      <a href="#faq">常见问题</a>
+      <a href="LICENSE">MIT 协议</a>
+    </div>
+    <div class="copy">第三方个人开源工具，与豆包官方无关 · 基于 MIT License 发布</div>
+  </div>
+</footer>
+
+</body>
+</html>

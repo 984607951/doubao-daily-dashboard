@@ -1,0 +1,7 @@
+{
+  "qr_url": "https://example.com/your-report-link",
+  "qr_note": "二维码指向的报告入口；部署后把这里改成你的公开报告链接",
+  "desktop_viewport": [1360, 2380],
+  "mobile_viewport": [430, 2400],
+  "chromium": ""
+}

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 本地配置（含个人链接，不入库）
+data/config.json
+
+# 运行时生成的真实数据与产物
+data/built_*.json
+data/daily_stats.json
+data/raw_*.json
+data/wc_*.png
+data/wc_*.jpg
+data/qr_*.png
+reports/*.html
+!reports/demo.html
+!reports/template_v3.html
+previews/
+
+# 系统文件
+.DS_Store
